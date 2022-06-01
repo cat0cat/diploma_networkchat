@@ -1,0 +1,4 @@
+SERVER_PORT = 23334
+SERVER_HOST = 127.0.0.1
+SERVER_LOG = serverLog.txt
+CLIENT_LOG = clientLog.txt
