@@ -5,14 +5,14 @@ import java.net.Socket;
 import java.util.Properties;
 import java.util.Scanner;
 
-public class Client extends Thread {
+public class Client {
     private int port;
     private String host;
     private String path;
-    private final Logger log = Logger.getInstance();
 
     public Client() {
         // считываем настройки из файла
+        Logger log = Logger.getInstance();
         try (FileReader reader = new FileReader("settings.txt")) {
             Properties props = new Properties();
             props.load(reader);

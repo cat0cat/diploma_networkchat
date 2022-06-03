@@ -3,64 +3,67 @@ package org.example.Server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Properties;
 
-public class Server extends Thread {
+public class Server {
 
+    public static ArrayList<Socket> clients = new ArrayList<>();
+
+    public static void main(String[] args) {
+        ServerWork.ConnectWithServer.Connect();
+    }
+
+}
+
+class ServerWork implements Runnable {
     private static int port;
     private static String host;
     private static String path;
     private static final Logger log = Logger.getInstance();
-    private static BufferedReader in;
-    private static PrintWriter out;
+    Socket client;
 
-    public Server() {
-        start();
+    public ServerWork(Socket socket) {
+
+        this.client = socket;
     }
 
-    public static void main(String[] args) {
-        // считываем настройки из файла
-        try (FileReader reader = new FileReader("settings.txt")) {
-            Properties props = new Properties();
-            props.load(reader);
-            port = Integer.parseInt(props.getProperty("SERVER_PORT"));
-            host = props.getProperty("SERVER_HOST");
-            path = props.getProperty("SERVER_LOG");
-        } catch (IOException ex) {
-            log.log(ex.getMessage(), path);
-            System.out.println(ex.getMessage());
-        }
+    @Override
+    public void run() {
         //запускаем сервер
         String userName = "";
 
+        log.log("Сервер запущен. Port: " + port + " Host: " + host, path);
+        System.out.println("Сервер запущен. Port: " + port + " Host: " + host);
+
         while (true) {
-            try (ServerSocket servSocket = new ServerSocket(port);
-                 Socket socket = servSocket.accept()) {
+            try {
+                PrintWriter out = new PrintWriter(this.client.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(this.client.getInputStream()));
 
-                log.log("Сервер запущен. Port: " + port + " Host: " + host, path);
-                System.out.println("Сервер запущен. Port: " + port + " Host: " + host);
 
-                out = new PrintWriter(socket.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                 String line;
                 while ((line = in.readLine()) != null) {
                     if (line.lastIndexOf("/name") == 0) {
                         userName = line;
                         userName = userName.replace("/name", "").trim();
-                        out.println("Привет, " + userName + "!");
+                        send("Привет, " + userName + "!");
+
+                        log.log(userName + " присоединился к чату", path);
                         continue;
                     }
                     // Пишем ответ
-                    if (!userName.isEmpty())
-                        out.print('[' + userName + "] ");
-                    out.println(line);
+
+                        if (!userName.isEmpty())
+                            send('[' + userName + "] " + line);
+                    }
                     // Выход если от клиента получили /exit
                     if (line.equals("/exit")) {
+                        log.log(userName + " вышел из чата", path);
+                        Server.clients.remove(client);
                         break;
                     }
-                    //out.flush();
-                }
 
             } catch (IOException ex) {
                 log.log(ex.getMessage(), path);
@@ -69,32 +72,40 @@ public class Server extends Thread {
         }
 
     }
-
-    @Override
-    public void run() {
-        String msg;
-        try {
-            msg = in.readLine();
-            out.println(msg);
-            out.flush();
-            while (true) {
-                msg = in.readLine();
-                try {
-                    if (msg.equals("/exit")) {
-                        log.log(msg, path);
-                        break;
-                    }
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                    log.log(e.getMessage(), path);
-                }
-                log.log(msg, path);
-                System.out.println(msg);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.log(e.getMessage(), path);
+    private void send(String message) throws IOException {
+        for (Socket client : Server.clients) {
+            if (client.isClosed()) continue;
+            PrintWriter sender = new PrintWriter(client.getOutputStream());
+            sender.println(message);
+            sender.flush();
         }
+        log.log(message,path);
     }
 
+    class ConnectWithServer {
+        public static void Connect() {
+            // считываем настройки из файла
+            try (FileReader reader = new FileReader("settings.txt")) {
+                Properties props = new Properties();
+                props.load(reader);
+                port = Integer.parseInt(props.getProperty("SERVER_PORT"));
+                host = props.getProperty("SERVER_HOST");
+                path = props.getProperty("SERVER_LOG");
+            } catch (IOException ex) {
+                log.log(ex.getMessage(), path);
+                System.out.println(ex.getMessage());
+            }
+            try (ServerSocket server = new ServerSocket(port)) {
+                while (true) {
+                    Socket client = server.accept();
+                    Server.clients.add(client);
+                    new Thread(new ServerWork(client)).start();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                log.log(e.getMessage(), path);
+            }
+
+        }
+    }
 }
