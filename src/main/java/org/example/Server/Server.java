@@ -50,9 +50,6 @@ class ServerWork implements Runnable {
                         continue;
                     }
                     // Пишем ответ
-//                    if (!userName.isEmpty())
-//                        out.print('[' + userName + "] ");
-//                    out.println(line);
                     send('[' + userName + "] " + line);
                     }
 

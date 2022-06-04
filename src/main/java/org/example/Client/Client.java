@@ -96,11 +96,9 @@ public class Client {
                 if (userMsg.equals("/exit"))
                     break;
                 else {
-                    out.println("SERVER: " + userMsg);
-                    //log.log(userMsg, path);
+                    out.println(userMsg);
                 }
                 out.flush();
-
             }
         }
     }
