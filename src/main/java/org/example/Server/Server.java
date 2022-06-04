@@ -49,7 +49,7 @@ class ServerWork implements Runnable {
                         send("Привет, " + userName + "!");
                         continue;
                     }
-                    // Пишем ответ
+
                     send('[' + userName + "] " + line);
                     }
 
