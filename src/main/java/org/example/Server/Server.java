@@ -24,7 +24,6 @@ class ServerWork implements Runnable {
     Socket client;
 
     public ServerWork(Socket socket) {
-
         this.client = socket;
     }
 
@@ -41,30 +40,29 @@ class ServerWork implements Runnable {
                 PrintWriter out = new PrintWriter(this.client.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(this.client.getInputStream()));
 
-
-
                 String line;
                 while ((line = in.readLine()) != null) {
                     if (line.lastIndexOf("/name") == 0) {
                         userName = line;
                         userName = userName.replace("/name", "").trim();
-                        send("Привет, " + userName + "!");
-
                         log.log(userName + " присоединился к чату", path);
+                        send("Привет, " + userName + "!");
                         continue;
                     }
                     // Пишем ответ
-
-                        if (!userName.isEmpty())
-                            send('[' + userName + "] " + line);
+//                    if (!userName.isEmpty())
+//                        out.print('[' + userName + "] ");
+//                    out.println(line);
+                    send('[' + userName + "] " + line);
                     }
+
                     // Выход если от клиента получили /exit
                     if (line.equals("/exit")) {
                         log.log(userName + " вышел из чата", path);
+                        send(userName + " вышел из чата");
                         Server.clients.remove(client);
                         break;
                     }
-
             } catch (IOException ex) {
                 log.log(ex.getMessage(), path);
                 ex.printStackTrace(System.out);
@@ -72,6 +70,7 @@ class ServerWork implements Runnable {
         }
 
     }
+
     private void send(String message) throws IOException {
         for (Socket client : Server.clients) {
             if (client.isClosed()) continue;
@@ -95,6 +94,7 @@ class ServerWork implements Runnable {
                 log.log(ex.getMessage(), path);
                 System.out.println(ex.getMessage());
             }
+
             try (ServerSocket server = new ServerSocket(port)) {
                 while (true) {
                     Socket client = server.accept();
@@ -105,7 +105,6 @@ class ServerWork implements Runnable {
                 e.printStackTrace();
                 log.log(e.getMessage(), path);
             }
-
         }
     }
 }
